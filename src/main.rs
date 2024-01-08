@@ -31,9 +31,9 @@ fn main() {
 
     // now output is gathered, print out buf in batches of feed_limit lines
     for (outf_num, lines) in buf.chunks(feed_limit).enumerate() {
-        let mut fh = File::create(format!("output_{}.md", outf_num)).unwrap();
+        let mut fh = File::create(format!("/tmp/feedgpt_{}.md", outf_num)).unwrap();
         for line in lines {
-            write!(fh, "{}", line).unwrap();
+            writeln!(fh, "{}", line).unwrap();
         }
         drop(fh);
     }
@@ -48,7 +48,7 @@ fn print_as_parts<P: AsRef<Path>>(filename: P, lines: &[&str], feed_limit: usize
 
     while lines_printed < lines.len() {
         buf.push(format!(
-            "\nPart {} of file `{}`:",
+            "\nPart {} of file `{}`:\n",
             count_parts_printed + 1,
             filename.as_ref().display()
         ));
@@ -65,7 +65,7 @@ fn print_as_parts<P: AsRef<Path>>(filename: P, lines: &[&str], feed_limit: usize
         count_parts_printed += 1;
     }
     buf.push(format!(
-        "\nthat concludes the content of file `{}`.",
+        "\nthat concludes the content of file `{}`.\n",
         filename.as_ref().display()
     ));
     buf
@@ -78,7 +78,7 @@ fn print_entire_file<P: AsRef<Path>>(
 ) -> Vec<String> {
     let mut buf: Vec<String> = Vec::new();
     buf.push(format!(
-        "\nContents of file `{}`:",
+        "\nContents of file `{}`:\n",
         filename.as_ref().display()
     ));
 
