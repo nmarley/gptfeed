@@ -1,6 +1,7 @@
 use std::env;
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::fs::{self, File};
+use std::io::Write;
+use std::path::Path;
 use walkdir::WalkDir;
 
 fn main() {
@@ -8,9 +9,8 @@ fn main() {
     // limit output to 150 lines
     let feed_limit: usize = 150;
 
-    let mut buf: Vec<&str> = Vec::new();
+    let mut buf: Vec<String> = Vec::new();
 
-    // TODO: write to files (filenames w/numbers) which I can feed in 1 at a time
     for entry in WalkDir::new(dir)
         .into_iter()
         .filter_map(|e| e.ok())
@@ -19,13 +19,24 @@ fn main() {
         let file_contents = fs::read_to_string(entry.path()).unwrap();
         let file_lines: Vec<&str> = file_contents.split('\n').collect();
         if file_lines.len() <= feed_limit {
-            buf.push(print_entire_file(entry.path(), &file_lines, feed_limit));
+            for line in print_entire_file(entry.path(), &file_lines, feed_limit).into_iter() {
+                buf.push(line);
+            }
         } else {
-            buf.push(print_as_parts(entry.path(), &file_lines, feed_limit));
+            for line in print_as_parts(entry.path(), &file_lines, feed_limit).into_iter() {
+                buf.push(line);
+            }
         }
     }
 
-    // now output is gathered
+    // now output is gathered, print out buf in batches of feed_limit lines
+    for (outf_num, lines) in buf.chunks(feed_limit).enumerate() {
+        let mut fh = File::create(format!("output_{}.md", outf_num)).unwrap();
+        for line in lines {
+            write!(fh, "{}", line).unwrap();
+        }
+        drop(fh);
+    }
 }
 
 const TRIPLE_BACKTICK: &str = "```";
