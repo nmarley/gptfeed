@@ -6,8 +6,11 @@ fn main() {
     let mut used: HashSet<String> = HashSet::new();
     let files = env::args().skip(1).collect::<Vec<String>>();
 
-    for f in files {
-        let suffix = get_filetype_suffix(&f);
+    let count_files = files.len();
+
+    println!("<code>");
+    for (index, filename) in files.into_iter().enumerate() {
+        let suffix = get_filetype_suffix(&filename);
         let comment_string = match suffix.as_str() {
             "py" | "rb" => "#",
             "sql" => "--",
@@ -15,15 +18,21 @@ fn main() {
         };
 
         // skip if already printed
-        if used.contains(&f) {
+        if used.contains(&filename) {
             continue;
         }
-        let file_contents = fs::read_to_string(&f).unwrap();
+        let file_contents = fs::read_to_string(&filename).unwrap();
 
-        println!("{} {}", comment_string, f);
-        println!("{}", file_contents);
-        used.insert(f.clone());
+        println!("{} {}", comment_string, filename);
+        print!("{}", file_contents);
+
+        // print a newline if not the last file
+        if index != count_files - 1 {
+            println!("");
+        }
+        used.insert(filename.clone());
     }
+    println!("</code>");
 }
 
 fn get_filetype_suffix(filename: impl Into<String>) -> String {
