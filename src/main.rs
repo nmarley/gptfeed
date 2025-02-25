@@ -21,7 +21,17 @@ fn main() {
         if used.contains(&filename) {
             continue;
         }
-        let file_contents = fs::read_to_string(&filename).unwrap();
+        let file_contents = match fs::read(&filename) {
+            Ok(bytes) => {
+                // Try multiple encodings, fall back to raw bytes if needed
+                String::from_utf8(bytes.clone())
+                    .unwrap_or_else(|_| String::from_utf8_lossy(&bytes).to_string())
+            }
+            Err(e) => {
+                eprintln!("Error reading file: {} – {}", filename, e);
+                continue;
+            }
+        };
 
         println!("{} {}", comment_string, filename);
         print!("{}", file_contents);
