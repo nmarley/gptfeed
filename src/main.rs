@@ -10,12 +10,12 @@ fn main() {
 
     println!("<code>");
     for (index, filename) in files.into_iter().enumerate() {
-        let suffix = get_filetype_suffix(&filename);
-        let comment_string = match suffix.as_str() {
-            "py" | "rb" => "#",
-            "sql" => "--",
-            _ => "//",
-        };
+        // let suffix = get_filetype_suffix(&filename);
+        // let comment_string = match suffix.as_str() {
+        //     "py" | "rb" => "#",
+        //     "sql" => "--",
+        //     _ => "//",
+        // };
 
         // skip if already printed
         if used.contains(&filename) {
@@ -33,29 +33,39 @@ fn main() {
             }
         };
 
-        println!("{} {}", comment_string, filename);
-        print!("{}", file_contents);
+        println!(
+            r#"<file>
+<filename>{}</filename>"#,
+            filename
+        );
+        print!(
+            r#"<file_contents>
+{}
+</file_contents>
+</file>"#,
+            file_contents
+        );
 
         // print a newline if not the last file
         if index != count_files - 1 {
-            println!("");
+            println!();
         }
         used.insert(filename.clone());
     }
-    println!("</code>");
+    println!("\n</code>");
 }
 
-fn get_filetype_suffix(filename: impl Into<String>) -> String {
-    let filename = filename.into();
-    filename.split('.').last().unwrap_or("").to_string()
-}
+// fn get_filetype_suffix(filename: impl Into<String>) -> String {
+//     let filename = filename.into();
+//     filename.split('.').last().unwrap_or("").to_string()
+// }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_get_filetype_suffix() {
-        assert_eq!(get_filetype_suffix("test.py"), "py");
-    }
-}
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//
+//     #[test]
+//     fn test_get_filetype_suffix() {
+//         assert_eq!(get_filetype_suffix("test.py"), "py");
+//     }
+// }
