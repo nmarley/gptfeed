@@ -38,7 +38,7 @@ fn main() {
 
         // print a newline if not the last file
         if index != count_files - 1 {
-            println!("");
+            println!();
         }
         used.insert(filename.clone());
     }
