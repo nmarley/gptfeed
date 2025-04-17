@@ -1,14 +1,25 @@
+use clap::Parser;
 use std::collections::HashSet;
-use std::env;
 use std::fs;
 
-fn main() {
-    let mut used: HashSet<String> = HashSet::new();
-    let files = env::args().skip(1).collect::<Vec<String>>();
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Input files to process
+    files: Vec<String>,
 
+    /// Container tag to use (defaults to "code")
+    #[arg(short, long, default_value = "code")]
+    container: String,
+}
+
+fn main() {
+    let args = Args::parse();
+    let mut used: HashSet<String> = HashSet::new();
+    let files = args.files.clone();
     let count_files = files.len();
 
-    println!("<code>");
+    println!("<{}>", args.container);
     for (index, filename) in files.into_iter().enumerate() {
         let suffix = get_filetype_suffix(&filename);
         let comment_string = match suffix.as_str() {
@@ -42,12 +53,12 @@ fn main() {
         }
         used.insert(filename.clone());
     }
-    println!("</code>");
+    println!("</{}>", args.container);
 }
 
 fn get_filetype_suffix(filename: impl Into<String>) -> String {
     let filename = filename.into();
-    filename.split('.').last().unwrap_or("").to_string()
+    filename.split('.').next_back().unwrap_or("").to_string()
 }
 
 #[cfg(test)]
