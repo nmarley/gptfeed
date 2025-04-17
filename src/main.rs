@@ -1,6 +1,7 @@
 use clap::Parser;
 use std::collections::HashSet;
 use std::fs;
+use std::io::{self, Write};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -15,13 +16,19 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
+    if let Err(e) = process_files(&args.files, &args.container, &mut io::stdout()) {
+        eprintln!("Error: {}", e);
+        std::process::exit(1);
+    }
+}
+
+fn process_files<W: Write>(files: &[String], container: &str, writer: &mut W) -> io::Result<()> {
     let mut used: HashSet<String> = HashSet::new();
-    let files = args.files.clone();
     let count_files = files.len();
 
-    println!("<{}>", args.container);
-    for (index, filename) in files.into_iter().enumerate() {
-        let suffix = get_filetype_suffix(&filename);
+    writeln!(writer, "<{}>", container)?;
+    for (index, filename) in files.iter().enumerate() {
+        let suffix = get_filetype_suffix(filename);
         let comment_string = match suffix.as_str() {
             "py" | "rb" => "#",
             "sql" => "--",
@@ -29,31 +36,34 @@ fn main() {
         };
 
         // skip if already printed
-        if used.contains(&filename) {
+        if used.contains(filename) {
             continue;
         }
-        let file_contents = match fs::read(&filename) {
+        let file_contents = match fs::read(filename) {
             Ok(bytes) => {
                 // Try multiple encodings, fall back to raw bytes if needed
                 String::from_utf8(bytes.clone())
                     .unwrap_or_else(|_| String::from_utf8_lossy(&bytes).to_string())
             }
             Err(e) => {
-                eprintln!("Error reading file: {} – {}", filename, e);
-                continue;
+                return Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    format!("Error reading file: {} – {}", filename, e),
+                ));
             }
         };
 
-        println!("{} {}", comment_string, filename);
-        print!("{}", file_contents);
+        writeln!(writer, "{} {}", comment_string, filename)?;
+        write!(writer, "{}", file_contents)?;
 
         // print a newline if not the last file
         if index != count_files - 1 {
-            println!();
+            writeln!(writer)?;
         }
         used.insert(filename.clone());
     }
-    println!("</{}>", args.container);
+    writeln!(writer, "</{}>", container)?;
+    Ok(())
 }
 
 fn get_filetype_suffix(filename: impl Into<String>) -> String {
@@ -64,9 +74,66 @@ fn get_filetype_suffix(filename: impl Into<String>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Cursor;
+    use std::io::Write as IoWrite;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_get_filetype_suffix() {
         assert_eq!(get_filetype_suffix("test.py"), "py");
+    }
+
+    #[test]
+    fn test_process_files_with_custom_container() {
+        // Create a temporary test file
+        let mut temp_file = NamedTempFile::new().unwrap();
+        writeln!(temp_file, "test content").unwrap();
+        let temp_path = temp_file.path().to_string_lossy().to_string();
+
+        let files = vec![temp_path.clone()];
+        let container = "pre";
+        let mut output = Cursor::new(Vec::new());
+
+        // Process the files
+        let result = process_files(&files, container, &mut output);
+
+        // Check the result
+        assert!(result.is_ok());
+
+        // Convert output to string for examination
+        let output_data = String::from_utf8(output.into_inner()).unwrap();
+
+        // Exact expected output with full path
+        let expected_output = format!("<pre>\n// {}\ntest content\n</pre>\n", temp_path);
+
+        // Byte for byte comparison
+        assert_eq!(output_data, expected_output);
+    }
+
+    #[test]
+    fn test_process_files_with_default_container() {
+        // Create a temporary test file
+        let mut temp_file = NamedTempFile::new().unwrap();
+        writeln!(temp_file, "test content").unwrap();
+        let temp_path = temp_file.path().to_string_lossy().to_string();
+
+        let files = vec![temp_path.clone()];
+        let container = "code"; // Default container
+        let mut output = Cursor::new(Vec::new());
+
+        // Process the files
+        let result = process_files(&files, container, &mut output);
+
+        // Check the result
+        assert!(result.is_ok());
+
+        // Convert output to string for examination
+        let output_data = String::from_utf8(output.into_inner()).unwrap();
+
+        // Exact expected output with full path
+        let expected_output = format!("<code>\n// {}\ntest content\n</code>\n", temp_path);
+
+        // Byte for byte comparison
+        assert_eq!(output_data, expected_output);
     }
 }
