@@ -8,10 +8,17 @@ on:
       - master
       - gh-actions
 
+    # TDB
+    # pull_request:
+    #   - master
+
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   build:
-    name: Build and release binaries
     # TODO: ubuntu-24.04-arm
+    name: Build and release binaries
     runs-on: ubuntu-latest
 
     # strategy:
@@ -29,22 +36,25 @@ jobs:
 
       - name: Build binary
         # run: cargo build --release --target=${{ matrix.target }}
-        run: cargo build --release
+        run: cargo build --verbose --release
 
-      - name: Package
-          # llvm-strip target/${{ matrix.target }}/release/gptfeed
-          # cp target/${{ matrix.target }}/release/gptfeed dist/
-          # zip ${GITHUB_REPOSITORY##*/}-${{ matrix.target }}.zip gptfeed
-        run: |
-          mkdir dist
-          llvm-strip target/release/gptfeed
-          cp target/release/gptfeed dist/
-          cd dist
-          zip ${GITHUB_REPOSITORY##*/}.zip gptfeed
+      - name: Run tests
+        run: cargo test --verbose
 
-      - name: Upload release asset
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/*.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Package
+      #     # llvm-strip target/${{ matrix.target }}/release/gptfeed
+      #     # cp target/${{ matrix.target }}/release/gptfeed dist/
+      #     # zip ${GITHUB_REPOSITORY##*/}-${{ matrix.target }}.zip gptfeed
+      #   run: |
+      #     mkdir dist
+      #     llvm-strip target/release/gptfeed
+      #     cp target/release/gptfeed dist/
+      #     cd dist
+      #     zip ${GITHUB_REPOSITORY##*/}.zip gptfeed
+      #
+      # - name: Upload release asset
+      #   uses: softprops/action-gh-release@v2
+      #   with:
+      #     files: dist/*.zip
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
