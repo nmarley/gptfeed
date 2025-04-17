@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use std::fs;
 use std::io::{self, Write};
 
+/// gptfeed - Output files in a specific format for LLM consumption
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Args {
@@ -12,27 +13,45 @@ struct Args {
     /// Container tag to use (defaults to "code")
     #[arg(short, long, default_value = "code")]
     container: String,
+
+    /// Custom comment character to use (defaults to auto-detect based on file extension)
+    #[arg(short = 'm', long, default_value = None)]
+    comment_char: Option<String>,
 }
 
 fn main() {
     let args = Args::parse();
-    if let Err(e) = process_files(&args.files, &args.container, &mut io::stdout()) {
+    if let Err(e) = process_files(
+        &args.files,
+        &args.container,
+        args.comment_char.as_deref(),
+        &mut io::stdout(),
+    ) {
         eprintln!("Error: {}", e);
         std::process::exit(1);
     }
 }
 
-fn process_files<W: Write>(files: &[String], container: &str, writer: &mut W) -> io::Result<()> {
+fn process_files<W: Write>(
+    files: &[String],
+    container: &str,
+    comment_char: Option<&str>,
+    writer: &mut W,
+) -> io::Result<()> {
     let mut used: HashSet<String> = HashSet::new();
     let count_files = files.len();
 
     writeln!(writer, "<{}>", container)?;
     for (index, filename) in files.iter().enumerate() {
-        let suffix = get_filetype_suffix(filename);
-        let comment_string = match suffix.as_str() {
-            "py" | "rb" => "#",
-            "sql" => "--",
-            _ => "//",
+        let comment_string = if let Some(custom_comment) = comment_char {
+            custom_comment
+        } else {
+            let suffix = get_filetype_suffix(filename);
+            match suffix.as_str() {
+                "py" | "rb" => "#",
+                "sql" => "--",
+                _ => "//",
+            }
         };
 
         // skip if already printed
@@ -95,7 +114,7 @@ mod tests {
         let mut output = Cursor::new(Vec::new());
 
         // Process the files
-        let result = process_files(&files, container, &mut output);
+        let result = process_files(&files, container, None, &mut output);
 
         // Check the result
         assert!(result.is_ok());
@@ -122,7 +141,7 @@ mod tests {
         let mut output = Cursor::new(Vec::new());
 
         // Process the files
-        let result = process_files(&files, container, &mut output);
+        let result = process_files(&files, container, None, &mut output);
 
         // Check the result
         assert!(result.is_ok());
@@ -132,6 +151,34 @@ mod tests {
 
         // Exact expected output with full path
         let expected_output = format!("<code>\n// {}\ntest content\n</code>\n", temp_path);
+
+        // Byte for byte comparison
+        assert_eq!(output_data, expected_output);
+    }
+
+    #[test]
+    fn test_process_files_with_custom_comment() {
+        // Create a temporary test file
+        let mut temp_file = NamedTempFile::new().unwrap();
+        writeln!(temp_file, "test content").unwrap();
+        let temp_path = temp_file.path().to_string_lossy().to_string();
+
+        let files = vec![temp_path.clone()];
+        let container = "code";
+        let comment_char = Some(";");
+        let mut output = Cursor::new(Vec::new());
+
+        // Process the files
+        let result = process_files(&files, container, comment_char, &mut output);
+
+        // Check the result
+        assert!(result.is_ok());
+
+        // Convert output to string for examination
+        let output_data = String::from_utf8(output.into_inner()).unwrap();
+
+        // Exact expected output with full path
+        let expected_output = format!("<code>\n; {}\ntest content\n</code>\n", temp_path);
 
         // Byte for byte comparison
         assert_eq!(output_data, expected_output);
