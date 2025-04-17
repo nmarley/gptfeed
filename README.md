@@ -13,6 +13,60 @@ gptfeed [OPTIONS] [FILES]...
 - `-c, --container <CONTAINER>`: Specify the container tag (default: "code")
 - `-m, --comment-prefix <COMMENT_PREFIX>`: Set a custom comment prefix (default: auto-detect based on file extension)
 
+## Sample Output
+
+The filename in the output makes it easy for LLMs to differentiate where one file ends and another begins.
+
+```
+<code>
+// main.ts
+const greet = () => {
+    console.log("Hello world!");
+};
+
+# script.py
+def hello():
+    print("Hello world!")
+</code>
+```
+
+By default, the comment style is automatically determined based on the file extension (`//` for JavaScript, `#` for Python, etc.).
+
+This can be overridden with the `--comment-prefix` option, which will be applied for all files passed to the command.
+
+The `<code>` XML tag is used as a container for the file contents. This can be customized with the `--container` option, e.g.:
+
+```
+gptfeed --container hello --comment-prefix '#' main.ts
+
+<hello>
+# main.ts
+const greet = () => {
+  console.log("Hello, world!");
+};
+</hello>
+```
+
+## Examples
+
+### Pipe to Clipboard on macOS
+
+You can easily pipe the output of gptfeed directly to your clipboard using pbcopy:
+
+```
+gptfeed path/to/your/file.js | pbcopy
+```
+
+This copies the formatted file content to your clipboard, ready to be pasted into your LLM interface.
+
+### Processing Multiple Files
+
+Process multiple files at once and pipe to clipboard:
+
+```
+gptfeed main.js script.py | pbcopy
+```
+
 ## License
 
 This project is licensed under either of
