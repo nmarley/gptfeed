@@ -14,11 +14,11 @@ jobs:
     # TODO: ubuntu-24.04-arm
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        target:
-          - x86_64-unknown-linux-gnu
-          - x86_64-apple-darwin
+    # strategy:
+    #   matrix:
+    #     target:
+    #       - x86_64-unknown-linux-gnu
+    #       - x86_64-apple-darwin
 
     steps:
       - name: Checkout repository
@@ -32,10 +32,12 @@ jobs:
         run: cargo build --release
 
       - name: Package
+          # llvm-strip target/${{ matrix.target }}/release/gptfeed
+          # cp target/${{ matrix.target }}/release/gptfeed dist/
         run: |
           mkdir dist
-          llvm-strip target/${{ matrix.target }}/release/gptfeed
-          cp target/${{ matrix.target }}/release/gptfeed dist/
+          llvm-strip target/release/gptfeed
+          cp target/release/gptfeed dist/
           cd dist
           zip ${GITHUB_REPOSITORY##*/}-${{ matrix.target }}.zip gptfeed
 
