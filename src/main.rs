@@ -14,9 +14,9 @@ struct Args {
     #[arg(short, long, default_value = "code")]
     container: String,
 
-    /// Custom comment character to use (defaults to auto-detect based on file extension)
+    /// Custom comment prefix to use (defaults to auto-detect based on file extension)
     #[arg(short = 'm', long, default_value = None)]
-    comment_char: Option<String>,
+    comment_prefix: Option<String>,
 }
 
 fn main() {
@@ -24,7 +24,7 @@ fn main() {
     if let Err(e) = process_files(
         &args.files,
         &args.container,
-        args.comment_char.as_deref(),
+        args.comment_prefix.as_deref(),
         &mut io::stdout(),
     ) {
         eprintln!("Error: {}", e);
@@ -35,7 +35,7 @@ fn main() {
 fn process_files<W: Write>(
     files: &[String],
     container: &str,
-    comment_char: Option<&str>,
+    comment_prefix: Option<&str>,
     writer: &mut W,
 ) -> io::Result<()> {
     let mut used: HashSet<String> = HashSet::new();
@@ -43,7 +43,7 @@ fn process_files<W: Write>(
 
     writeln!(writer, "<{}>", container)?;
     for (index, filename) in files.iter().enumerate() {
-        let comment_string = if let Some(custom_comment) = comment_char {
+        let comment_string = if let Some(custom_comment) = comment_prefix {
             custom_comment
         } else {
             let suffix = get_filetype_suffix(filename);
@@ -165,11 +165,11 @@ mod tests {
 
         let files = vec![temp_path.clone()];
         let container = "code";
-        let comment_char = Some(";");
+        let comment_prefix = Some(";");
         let mut output = Cursor::new(Vec::new());
 
         // Process the files
-        let result = process_files(&files, container, comment_char, &mut output);
+        let result = process_files(&files, container, comment_prefix, &mut output);
 
         // Check the result
         assert!(result.is_ok());

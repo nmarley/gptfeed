@@ -11,7 +11,7 @@ gptfeed [OPTIONS] [FILES]...
 ## Options
 
 - `-c, --container <CONTAINER>`: Specify the container tag (default: "code")
-- `-m, --comment-char <COMMENT_CHAR>`: Set a custom comment character (default: auto-detect based on file extension)
+- `-m, --comment-prefix <COMMENT_PREFIX>`: Set a custom comment prefix (default: auto-detect based on file extension)
 
 ## License
 
