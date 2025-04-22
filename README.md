@@ -8,6 +8,8 @@ A command-line utility that formats files for easy consumption by Large Language
 gptfeed [OPTIONS] [FILES]...
 ```
 
+If no files are provided, or if "-" is specified as a filename, the tool will read from stdin.
+
 ## Options
 
 - `-c, --container <CONTAINER>`: Specify the container tag (default: "code")
@@ -48,6 +50,26 @@ const greet = () => {
 ```
 
 ## Examples
+
+### Reading from stdin
+
+You can pipe content directly to gptfeed:
+
+```
+cat file.js | gptfeed
+```
+
+Or:
+
+```
+echo "console.log('Hello');" | gptfeed
+```
+
+You can also use the "-" placeholder to mix stdin with files:
+
+```
+cat file.js | gptfeed - other_file.py
+```
 
 ### Pipe to Clipboard on macOS
 
