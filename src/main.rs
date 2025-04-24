@@ -15,7 +15,7 @@ struct Args {
     container: String,
 
     /// Custom comment prefix to use (defaults to auto-detect based on file extension)
-    #[arg(short = 'm', long, default_value = None)]
+    #[arg(short = 'm', long, default_value = None, allow_hyphen_values = true)]
     comment_prefix: Option<String>,
 }
 
