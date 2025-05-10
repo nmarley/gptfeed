@@ -65,6 +65,8 @@ Or:
 echo "console.log('Hello');" | gptfeed
 ```
 
+When reading from stdin, no filename comment header is printed, only the content is included.
+
 You can also use the "-" placeholder to mix stdin with files:
 
 ```
